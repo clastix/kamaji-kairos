@@ -1,0 +1,70 @@
+#cloud-config
+
+debug: true
+
+growpart:
+  devices:
+  - /
+
+install:
+  auto: true
+  force: true
+  system:
+    fs: ext4
+    size: 4096
+  partitions:
+    state:
+      size: 12288
+
+reset:
+  system:
+    uri: quay.io/clastix/core-ubuntu-22-lts-kubeadm:1.31.1
+    fs: ext4
+    size: 4096
+  grub-entry-name: Kairos
+  poweroff: true
+  reboot: true
+  reset-oem: true
+  reset-persistent: true
+
+upgrade:
+  system:
+    fs: ext4
+    size: 4096
+
+strict: true
+
+stages:
+  initramfs:
+  - users:
+      kairos:
+        groups:
+          - sudo
+        passwd: kairos
+  - commands:
+    - ln -s /etc/kubernetes/admin.conf /run/kubeconfig
+    sysctl:
+      kernel.panic: "10"
+      kernel.panic_on_oops: "1"
+      vm.overcommit_memory: "1"
+    name: pre-kubeadm
+
+users:
+- lock_passwd: true
+  name: kairos
+  ssh_authorized_keys:
+  - REDACTED
+
+cluster:
+  cluster_token: REDACTED.REDACTED
+  control_plane_host: kubernetes.api.endpoint.tld
+  role: worker
+  ### Customize the join configuration according to your needs
+  config: |
+    joinConfiguration:
+      discovery:
+        bootstrapToken:
+          apiServerEndpoint: kubernetes.api.endpoint.tld:443
+          caCertHashes:
+          - SHA
+          token: REDACTED.REDACTED
